@@ -22,6 +22,7 @@ extra["springCloudVersion"] = "2023.0.3"
 
 dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j")
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.cloud:spring-cloud-starter-gateway")
     implementation("com.okta.spring:okta-spring-boot-starter:3.0.7")
