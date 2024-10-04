@@ -1,0 +1,8 @@
+services:
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: .
+    env_file: .env
+    ports:
+      - 8080:8080
