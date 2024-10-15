@@ -60,3 +60,7 @@ pom.xml.tag
 pom.xml.versionsBackup
 release.properties
 replay_pid*
+.gradle/
+bin/
+build/
+gradle/

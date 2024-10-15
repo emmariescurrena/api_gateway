@@ -1,34 +1,26 @@
-# Use an official Gradle image as a parent image
 FROM gradle:8.10.2-jdk23 AS builder
 
-# Set the working directory in the container
+RUN gradle --version && java -version
+
 WORKDIR /app
 
-# Copy the Gradle build files and wrapper files
-# Ensure the `gradlew` script and `gradle-wrapper.jar` are copied to the correct locations
-COPY build.gradle.kts settings.gradle.kts gradlew gradlew.bat /app/
-COPY gradle/wrapper/ /app/gradle/wrapper/
+# Only copy dependency-related files
+COPY build.gradle.kts settings.gradle.kts /app/
 
-# Run dependency resolution first
-RUN ./gradlew dependencies --no-daemon
+# Only download dependencies
+# Eat the expected build failure since no source code has been copied yet
+RUN gradle clean build --no-daemon > /dev/null 2>&1 || true
 
-# Copy the entire project source to the container
-COPY . /app/
+# Copy all files
+COPY ./ /app/
 
-# Build the project using Gradle (you can specify more tasks if needed)
-RUN ./gradlew build -x test --no-daemon
+# Do the actual build
+RUN gradle clean build -x test --no-daemon
 
 # Use a lightweight OpenJDK image to run the application
 FROM openjdk:23-jdk-slim
 
-# Set the working directory in the container
-WORKDIR /app
-
 # Copy the built application from the previous image
-COPY --from=builder /app/build/libs/*.jar /app/api_gateway.jar
+COPY --from=builder /app/build/libs/*.jar /app/app.jar
 
-# Expose the application port
-EXPOSE 8080
-
-# Command to run the application
-CMD ["java", "-jar", "/app/api_gateway.jar"]
+CMD ["java", "-jar", "/app/app.jar"]
