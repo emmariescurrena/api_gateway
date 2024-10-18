@@ -18,7 +18,6 @@ import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.client.ClientAuthorizationRequiredException;
 import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.reactive.function.server.RequestPredicates;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -54,54 +53,31 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
         ErrorAttributeOptions options = ErrorAttributeOptions.of(ErrorAttributeOptions.Include.MESSAGE);
         Map<String, Object> errorPropertiesMap = getErrorAttributes(request, options);
         Throwable throwable = getError(request);
-        HttpStatusCode httpStatus = determineHttpStatus(throwable);
 
-        if (throwable instanceof WebClientResponseException) {
-            WebClientResponseException webClientException = (WebClientResponseException) throwable;
-            errorPropertiesMap.put("message", webClientException.getResponseBodyAsString());
-            errorPropertiesMap.put("details", webClientException.getResponseBodyAsString());
-        } else if (throwable instanceof AccessDeniedException) {
-            errorPropertiesMap.put("message", "You do not have permission to access this resource.");
-        } else {
-            errorPropertiesMap.put("message", throwable.getMessage());
-        }
-
-        errorPropertiesMap.put("status", httpStatus.value());
-        errorPropertiesMap.remove("error");
-
-        return ServerResponse.status(httpStatus)
-               .contentType(MediaType.APPLICATION_JSON)
-               .body(BodyInserters.fromValue(errorPropertiesMap));
+        HttpStatusCode statusCode = determineHttpStatus(throwable);
+        errorPropertiesMap.put("status", statusCode.value());
+        errorPropertiesMap.put("message", throwable.getMessage());
+    
+        return ServerResponse.status((HttpStatusCode) errorPropertiesMap.get("status"))
+              .contentType(MediaType.APPLICATION_JSON)
+              .body(BodyInserters.fromValue(errorPropertiesMap));
     }
 
     private HttpStatusCode determineHttpStatus(Throwable throwable) {
-
         if (throwable instanceof WebClientResponseException) {
             return ((WebClientResponseException) throwable).getStatusCode();
-        } else if (throwable instanceof WebClientRequestException) {
-            if (throwable.getCause() instanceof java.net.SocketTimeoutException) {
-                return HttpStatus.GATEWAY_TIMEOUT;
-            } else if (throwable.getCause() instanceof java.net.UnknownHostException) {
-                return HttpStatus.SERVICE_UNAVAILABLE;
-            } else if (throwable.getCause() instanceof javax.net.ssl.SSLException) {
-                return HttpStatus.BAD_GATEWAY;
-            } else {
-                return HttpStatus.SERVICE_UNAVAILABLE;
-            }
         } else if (throwable instanceof ResponseStatusException) {
             return ((ResponseStatusException) throwable).getStatusCode();
-        } else if (throwable.getCause() instanceof ClientAuthorizationRequiredException) {
+        } else if (throwable instanceof ClientAuthorizationRequiredException) {
             return HttpStatus.UNAUTHORIZED;
         } else if (throwable instanceof NotFoundException) {
             return HttpStatus.NOT_FOUND;
         } else if (throwable instanceof AccessDeniedException) {
             return HttpStatus.FORBIDDEN;
         } else {
-            // Fallback for unknown exceptions
-            log.error("Unknown error occurred: ", throwable); // Log the exception details
-            return HttpStatus.INTERNAL_SERVER_ERROR;  // Keep the 500 status
+            log.error("Unknown error occurred: ", throwable);
+            return HttpStatus.INTERNAL_SERVER_ERROR;
         }
-
     }
-
 }
+
