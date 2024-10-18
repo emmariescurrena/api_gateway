@@ -13,6 +13,7 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/users/**
+
 server:
   port: 8080
 
