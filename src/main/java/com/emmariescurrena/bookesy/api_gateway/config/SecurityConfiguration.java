@@ -3,6 +3,7 @@ package com.emmariescurrena.bookesy.api_gateway.config;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,15 +20,12 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 @Configuration
 public class SecurityConfiguration {
-
+    
     @Value("${okta.oauth2.audience:}")
     private String audience;
 
-    private final ReactiveClientRegistrationRepository clientRegistrationRepository;
-
-    public SecurityConfiguration(ReactiveClientRegistrationRepository clientRegistrationRepository) {
-        this.clientRegistrationRepository = clientRegistrationRepository;
-    }
+    @Autowired
+    ReactiveClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http) throws Exception {
@@ -36,7 +34,7 @@ public class SecurityConfiguration {
             .csrf((csrf) -> csrf.disable())
             .cors((cors) -> cors.configurationSource(corsConfigurationSource()))
             .authorizeExchange(authz -> authz
-                .pathMatchers(HttpMethod.POST, "/users").permitAll()
+                .pathMatchers(HttpMethod.POST, "/users/**").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
@@ -65,8 +63,7 @@ public class SecurityConfiguration {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration
-                .setAllowedOrigins(List.of("http://localhost:8080"));
+        configuration.setAllowedOrigins(List.of("http://localhost:8080"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 
