@@ -12,7 +12,24 @@ spring:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/users/**
+            - Path=/api/users/**
+  security:
+    oauth2:
+      client:
+        registration:
+          okta:
+            client-id: ${CLIENT_ID}
+            client-secret: ${CLIENT_SECRET}
+        provider:
+          okta:
+            issuer-uri: ${ISSUER_URI}
+
+okta:
+  oauth2:
+    issuer: ${ISSUER_URI}
+    client-id: ${CLIENT_ID}
+    client-secret: ${CLIENT_SECRET}
+    audience: ${ISSUER_URI}api/v2/
 
 server:
   port: 8080
@@ -21,3 +38,9 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE}
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
