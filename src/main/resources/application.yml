@@ -17,6 +17,7 @@ spring:
           uri: lb://book-service
           predicates:
             - Path=/api/books/**
+            - Path=/api/authors/**
   security:
     oauth2:
       client:
