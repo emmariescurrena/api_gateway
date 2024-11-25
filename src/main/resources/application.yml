@@ -18,6 +18,11 @@ spring:
           predicates:
             - Path=/api/books/**
             - Path=/api/authors/**
+        - id: review-service
+          uri: lb://review-service
+          predicates:
+            - Path=/api/review/**
+
   security:
     oauth2:
       client:
